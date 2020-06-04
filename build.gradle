@@ -1,0 +1,33 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+application {
+    mainClassName = 'info.johtani.lucene.kuromoji.GraphVizOutput'
+}
+
+group 'info.johtani'
+version '1.0-SNAPSHOT'
+description "Kuromoji GraphViz Output"
+
+repositories {
+    mavenCentral()
+}
+
+jar {
+    manifest {
+        attributes 'Main-Class': 'info.johtani.lucene.kuromoji.GraphVizOutput'
+    }
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+
+}
+
+dependencies {
+    compile "org.apache.lucene:lucene-core:${kuromojiVersion}"
+    compile "org.apache.lucene:lucene-analyzers-common:${kuromojiVersion}"
+    compile "org.apache.lucene:lucene-analyzers-kuromoji:${kuromojiVersion}"
+    testCompileOnly group: 'junit', name: 'junit', version: '4.12'
+}
