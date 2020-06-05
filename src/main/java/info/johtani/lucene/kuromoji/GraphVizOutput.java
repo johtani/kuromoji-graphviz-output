@@ -15,6 +15,10 @@
  */
 package info.johtani.lucene.kuromoji;
 
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.Options;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.ja.GraphvizFormatter;
@@ -28,28 +32,45 @@ import java.io.*;
 
 public class GraphVizOutput {
 
-    public static void main(String[] args)throws Exception{
+
+    private Options options;
+    private String text;
+    private String userDictPath;
+    private boolean discardPunctuation = true;
+    private boolean discardCompundToken = true;
+    private JapaneseTokenizer.Mode mode = JapaneseTokenizer.Mode.SEARCH;
+
+    private GraphVizOutput() {
+        options = new Options();
+
+
+
+    }
+
+    private void parseArgs(String[] args) {
+        CommandLineParser parser = new DefaultParser();
+
 
         if(args.length == 0){
             System.err.println("Usage: java -jar KuromojiGraphVizOutputTool.jar <input string> [user_dictionary_path]");
             System.exit(0);
         }
+    }
 
-        String input = args[0];
-        final String userDictPath = args.length < 2 ? null : args[1];
-
+    private void tokenize() throws Exception{
         final GraphvizFormatter gv2 = new GraphvizFormatter(ConnectionCosts.getInstance());
         final Analyzer analyzer = new Analyzer() {
             @Override
             protected TokenStreamComponents createComponents(String fieldName) {
-                JapaneseTokenizer tokenizer = new JapaneseTokenizer(readDict(userDictPath), true, false, JapaneseTokenizer.Mode.SEARCH);
+                JapaneseTokenizer tokenizer = new JapaneseTokenizer(readDict(userDictPath), discardPunctuation,
+                        discardCompundToken, mode);
                 tokenizer.setGraphvizFormatter(gv2);
                 return new TokenStreamComponents(tokenizer, tokenizer);
             }
         };
 
 
-        TokenStream ts = analyzer.tokenStream("ignored", new StringReader(input));
+        TokenStream ts = analyzer.tokenStream("ignored", new StringReader(this.text));
         CharTermAttribute cta = ts.getAttribute(CharTermAttribute.class);
         ts.reset();
         while(ts.incrementToken()){
@@ -58,6 +79,13 @@ public class GraphVizOutput {
         System.out.println("#### dot file ####");
         String graphviz = gv2.finish();
         System.out.println(graphviz);
+    }
+
+
+    public static void main(String[] args)throws Exception{
+        GraphVizOutput command = new GraphVizOutput();
+        command.parseArgs(args);
+        command.tokenize();
     }
 
 
