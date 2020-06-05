@@ -23,10 +23,15 @@ OR
 ```
 
 
-Run the below command on macOS.
+Run the below command on macOS if you want to show GraphViz output as an image.
 
 ```shell script
  java -jar build/libs/lucene-kuromoji-graphviz-output-1.0-SNAPSHOT.jar "関西国際空港" | dot -Tpng | open -f -a preview.app
+```
+
+OR
+```shell script
+./kuromoji.sh "関西国際空港" | dot -Tpng | open -f -a preview.app
 ```
 
 **the command outputs DOT file to stdout and outputs tokens to stderr.**
