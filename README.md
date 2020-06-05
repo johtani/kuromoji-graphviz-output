@@ -13,6 +13,16 @@ This tool outputs GraphViz data and token stream that is toknized by Lucene Kuro
 
 ## Usage
 
+Run the command to show help.
+```shell script
+java -jar build/libs/lucene-kuromoji-graphviz-output-1.0-SNAPSHOT.jar -h
+```
+OR
+```shell script
+./kuromoji.sh -h
+```
+
+
 Run the below command on macOS.
 
 ```shell script
