@@ -29,5 +29,6 @@ dependencies {
     compile "org.apache.lucene:lucene-core:${kuromojiVersion}"
     compile "org.apache.lucene:lucene-analyzers-common:${kuromojiVersion}"
     compile "org.apache.lucene:lucene-analyzers-kuromoji:${kuromojiVersion}"
+    compile "commons-cli:commons-cli:1.4"
     testCompileOnly group: 'junit', name: 'junit', version: '4.12'
 }

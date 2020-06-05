@@ -15,6 +15,7 @@
  */
 package info.johtani.lucene.kuromoji;
 
+import org.apache.commons.cli.*;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.ja.GraphvizFormatter;
@@ -25,31 +26,98 @@ import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.util.IOUtils;
 
 import java.io.*;
+import java.util.Arrays;
 
 public class GraphVizOutput {
 
-    public static void main(String[] args)throws Exception{
 
-        if(args.length == 0){
-            System.err.println("Usage: java -jar KuromojiGraphVizOutputTool.jar <input string> [user_dictionary_path]");
-            System.exit(0);
+    private Options options;
+    private String text;
+    private String userDictPath;
+    private boolean discardPunctuation = true;
+    private boolean discardCompoundToken = true;
+    private JapaneseTokenizer.Mode mode = JapaneseTokenizer.Mode.SEARCH;
+
+    private static String DISCARD_PUNCTUATION = "discard_punctuation";
+    private static String MODE = "mode";
+    private static String HELP = "help";
+    private static String DISCARD_COMPOUND_TOKEN = "discard_compound_token";
+    private static String USER_DICT = "userdict";
+
+    private GraphVizOutput() {
+        options = new Options();
+        options.addOption(
+                new Option("h", HELP, false, "print this message")
+        );
+        options.addOption(
+                new Option(USER_DICT, true, "User Dictionary Path")
+        );
+        options.addOption(
+                new Option("m", MODE, true, "Tokenization mode: NORMAL or SEARCH or EXTENDED. Default is SEARCH")
+        );
+        options.addOption(
+                new Option("dp", DISCARD_PUNCTUATION, true, "true if punctuation tokens should be dropped from the output. Default is true.")
+        );
+        options.addOption(
+                new Option("dct", DISCARD_COMPOUND_TOKEN, true, "true if compound tokens should be dropped from the output when tokenization mode is not NORMAL. Default is true.")
+        );
+    }
+
+    private void printHelp() {
+        HelpFormatter formatter = new HelpFormatter();
+        formatter.printHelp("java -jar KuromojiGraphVizOutputTool.jar [OPTIONS]... TEXT", options);
+        System.exit(0);
+    }
+
+    private void parseArgs(String[] args) {
+        CommandLineParser parser = new DefaultParser();
+        try {
+            CommandLine line = parser.parse(options, args);
+            if (line.hasOption(HELP)) {
+                printHelp();
+            }
+            if (line.hasOption(MODE)) {
+                mode = JapaneseTokenizer.Mode.valueOf(line.getOptionValue(MODE, "SEARCH"));
+            }
+            if (line.hasOption(DISCARD_PUNCTUATION)) {
+                discardPunctuation = Boolean.valueOf(line.getOptionValue(DISCARD_PUNCTUATION, "true"));
+            }
+            if (line.hasOption(DISCARD_COMPOUND_TOKEN)) {
+                discardCompoundToken = Boolean.valueOf(line.getOptionValue(DISCARD_COMPOUND_TOKEN, "true"));
+            }
+            if (line.hasOption(USER_DICT)) {
+                userDictPath = line.getOptionValue(USER_DICT);
+            }
+
+            String[] commandArgs = line.getArgs();
+            if (commandArgs.length == 0) {
+                System.err.println("\"TEXT\" is required. Please add text what you want to tokenize.");
+                System.err.println("");
+                printHelp();
+            }
+            text = String.join(" ", commandArgs);
+
+        } catch (ParseException e) {
+            System.err.println("Unexpected arguments: " + e.getMessage());
+            printHelp();
         }
 
-        String input = args[0];
-        final String userDictPath = args.length < 2 ? null : args[1];
+    }
 
+    private void tokenize() throws Exception{
         final GraphvizFormatter gv2 = new GraphvizFormatter(ConnectionCosts.getInstance());
         final Analyzer analyzer = new Analyzer() {
             @Override
             protected TokenStreamComponents createComponents(String fieldName) {
-                JapaneseTokenizer tokenizer = new JapaneseTokenizer(readDict(userDictPath), true, false, JapaneseTokenizer.Mode.SEARCH);
+                JapaneseTokenizer tokenizer = new JapaneseTokenizer(readDict(userDictPath), discardPunctuation,
+                        discardCompoundToken, mode);
                 tokenizer.setGraphvizFormatter(gv2);
                 return new TokenStreamComponents(tokenizer, tokenizer);
             }
         };
 
 
-        TokenStream ts = analyzer.tokenStream("ignored", new StringReader(input));
+        TokenStream ts = analyzer.tokenStream("ignored", new StringReader(this.text));
         CharTermAttribute cta = ts.getAttribute(CharTermAttribute.class);
         ts.reset();
         while(ts.incrementToken()){
@@ -58,6 +126,13 @@ public class GraphVizOutput {
         System.out.println("#### dot file ####");
         String graphviz = gv2.finish();
         System.out.println(graphviz);
+    }
+
+
+    public static void main(String[] args)throws Exception{
+        GraphVizOutput command = new GraphVizOutput();
+        command.parseArgs(args);
+        command.tokenize();
     }
 
 
