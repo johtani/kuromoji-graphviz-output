@@ -22,6 +22,9 @@ OR
 ./kuromoji.sh -h
 ```
 
+### Show graphviz image on macOS
+
+**Require graphviz command**
 
 Run the below command on macOS if you want to show GraphViz output as an image.
 
